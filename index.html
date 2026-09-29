@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>救急資器材引継表</title>
+<style>
+  :root{
+    --ink:#16233F; --ink2:#24365C; --accent:#E86A1C; --accentSoft:#FFEEDD;
+    --page:#EEF1F5; --surface:#FFFFFF; --line:#C9D2DE; --lineSoft:#E4E9F0; --sub:#64748B;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--page);color:var(--ink);
+    font-family:'Hiragino Kaku Gothic ProN','Yu Gothic',Meiryo,system-ui,sans-serif;
+    -webkit-text-size-adjust:100%;}
+  button{font-family:inherit;}
+  input,select{font-family:inherit;}
+  #app{min-height:100vh;padding-bottom:24px;}
+
+  header.hdr{background:var(--ink);color:#fff;padding:14px 16px 12px;position:sticky;top:0;z-index:20;box-shadow:0 2px 10px rgba(0,0,0,.15);}
+  .hdr-title{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+  .hdr-title .form-no{font-size:11px;letter-spacing:2px;color:#9FB0CE;}
+  .hdr-title h1{margin:0;font-size:18px;font-weight:700;letter-spacing:1px;}
+  .badge{font-size:12px;font-weight:700;color:#fff;background:var(--ink2);padding:2px 10px;border-radius:20px;}
+
+  .tabs{display:flex;gap:6px;padding:12px 10px 0;}
+  .tab{flex:1;padding:9px 0;border:none;border-radius:10px 10px 0 0;background:transparent;color:var(--sub);font-weight:500;font-size:14px;cursor:pointer;}
+  .tab.active{background:var(--surface);color:var(--ink);font-weight:700;box-shadow:0 -1px 4px rgba(0,0,0,.05);}
+
+  .surface{background:var(--surface);}
+  .dayrow{display:flex;gap:6px;overflow-x:auto;padding:12px 12px 10px;border-bottom:1px solid var(--lineSoft);}
+  .daychip{position:relative;flex:0 0 auto;width:40px;height:40px;border-radius:10px;border:none;background:var(--page);color:var(--ink);font-weight:700;font-size:15px;cursor:pointer;}
+  .daychip.active{background:var(--accent);color:#fff;}
+  .daychip.done{background:#E7F3EC;color:#1F7A44;border:1.5px solid #1F7A44;}
+  .daychip.part{background:#FFF6E5;color:#B7791F;border:1.5px solid #E3C56B;}
+  .daychip.miss{background:#FCE9E6;color:#C23A26;border:1.5px solid #C23A26;}
+  .daychip .mk{position:absolute;top:2px;right:4px;font-size:9px;}
+
+  .summary{display:flex;align-items:center;gap:8px;padding:10px 16px;flex-wrap:wrap;}
+  .summary strong{font-size:16px;}
+  .summary .stat{font-size:12px;color:var(--sub);}
+  .summary .stat.warn{color:#C23A26;font-weight:700;}
+  .btn{padding:8px 12px;border-radius:8px;border:1.5px solid var(--ink);background:#fff;color:var(--ink);font-weight:700;font-size:13px;cursor:pointer;}
+  .btn-primary{width:100%;padding:15px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-weight:800;font-size:16px;cursor:pointer;box-shadow:0 3px 8px rgba(232,106,28,.3);}
+  .badge-ok{font-size:12px;font-weight:700;color:#1F7A44;background:#E7F3EC;padding:6px 10px;border-radius:8px;}
+
+  .pills{display:flex;gap:6px;padding:0 16px 8px;align-items:center;flex-wrap:wrap;}
+  .pill{padding:6px 12px;border-radius:20px;border:1.5px solid var(--line);background:#fff;color:var(--sub);font-size:12px;font-weight:700;cursor:pointer;}
+  .pill.active{border-color:var(--ink);background:var(--ink);color:#fff;}
+  .youto{margin-left:auto;font-size:11px;font-weight:700;color:var(--accent);}
+  .bigseg{display:flex;gap:8px;padding:10px 12px 4px;}
+  .bigpill{flex:1;padding:13px 6px;border-radius:12px;border:2px solid var(--line);background:#fff;color:var(--ink);font-size:15px;font-weight:800;cursor:pointer;text-align:center;line-height:1.25;}
+  .bigpill.active{border-color:var(--accent);background:var(--accent);color:#fff;box-shadow:0 2px 6px rgba(232,106,28,.30);}
+  .bigpill .lg{display:block;font-size:19px;font-weight:800;letter-spacing:1px;}
+  .bigpill .sub{display:block;font-size:11px;font-weight:600;opacity:.85;margin-top:2px;}
+  .segnote{padding:2px 16px 8px;font-size:12px;color:var(--sub);font-weight:700;}
+
+  .colhead{display:flex;align-items:center;padding:6px 16px;background:var(--page);font-size:11px;color:var(--ink2);font-weight:700;}
+  .colhead .c-name{flex:1;} .colhead .c-qty{width:56px;text-align:center;} .colhead .c-chk{width:46px;text-align:center;}
+  .cathead{background:#F7F9FC;color:var(--ink2);font-size:12px;font-weight:700;letter-spacing:1px;padding:6px 16px;}
+  .listrow{width:100%;display:flex;align-items:center;padding:10px 16px;border:none;border-bottom:1px solid var(--lineSoft);background:#fff;text-align:left;cursor:pointer;}
+  .listrow.locked{background:#FBFCFD;cursor:default;}
+  .listrow .r-name{flex:1;min-width:0;font-size:15px;color:var(--ink);padding-right:8px;}
+  .listrow .r-qty{width:56px;text-align:center;font-size:15px;color:var(--ink2);font-weight:700;}
+  .listrow .r-chk{width:46px;display:flex;justify-content:center;}
+  .chip{display:inline-flex;align-items:center;justify-content:center;min-width:46px;height:40px;border-radius:10px;font-weight:800;font-size:18px;border:1.5px solid var(--lineSoft);}
+
+  .signblk{padding:16px 16px 4px;} .signblk .lbl{font-size:12px;color:var(--sub);margin-bottom:6px;}
+  .txt{width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--line);font-size:16px;}
+  .txt:disabled{background:#F1F4F8;}
+  textarea.txt{min-height:56px;resize:vertical;line-height:1.5;}
+  .sign-input{border-color:var(--ink2)!important;border-width:2px!important;}
+  .noteslist{display:flex;flex-direction:column;gap:6px;}
+  .noteitem{font-size:13px;color:var(--ink);background:var(--page);border-radius:8px;padding:8px 10px;line-height:1.5;}
+  .regblk{padding:8px 16px 24px;}
+  .regnote{font-size:12px;color:var(--accent);margin-bottom:8px;line-height:1.5;}
+  .regdone{background:#EDF7F0;border:1px solid #BFE3CC;border-radius:12px;padding:14px;}
+  .regdone .t{font-size:13px;font-weight:700;color:#1F7A44;}
+  .regdone .s{font-size:12px;color:var(--sub);margin-top:4px;}
+  .btn-sm{margin-top:10px;padding:9px 14px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:13px;cursor:pointer;}
+
+  /* bottom sheet */
+  .overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:50;display:flex;align-items:flex-end;}
+  .sheet{width:100%;background:#fff;border-radius:18px 18px 0 0;padding:14px 16px 22px;box-shadow:0 -6px 24px rgba(0,0,0,.2);}
+  .sheet .grip{width:40px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 12px;}
+  .sheet .s-name{font-size:15px;font-weight:700;margin-bottom:2px;}
+  .sheet .s-sub{font-size:12px;color:var(--sub);margin-bottom:12px;}
+  .opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .opt{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;border:2px solid var(--lineSoft);background:#fff;cursor:pointer;text-align:left;}
+  .opt .osym{width:34px;height:34px;border-radius:8px;font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  .opt .olbl{font-size:12px;color:var(--ink);line-height:1.3;}
+  .opt-clear{grid-column:1/-1;padding:11px;border-radius:12px;border:1.5px solid var(--line);background:#fff;color:var(--sub);font-size:13px;font-weight:600;cursor:pointer;}
+
+  /* grid */
+  .gridwrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:#fff;margin-top:10px;}
+  table.grid{border-collapse:collapse;font-size:11px;}
+  table.grid th,table.grid td{border:1px solid var(--lineSoft);}
+  table.grid th{background:var(--ink);color:#fff;font-weight:700;text-align:center;padding:6px 2px;}
+  table.grid th.name,table.grid td.name{position:sticky;left:0;z-index:1;min-width:120px;max-width:150px;}
+  table.grid th.name{padding:6px 8px;border:1px solid var(--ink2);}
+  table.grid td.name{background:#fff;padding:5px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  table.grid td.d{width:22px;min-width:22px;text-align:center;padding:5px 0;font-weight:700;}
+  .legend{display:flex;flex-wrap:wrap;gap:6px;font-size:11px;}
+  .legend span{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-weight:700;}
+
+  /* med */
+  .medcard{margin:8px 12px 14px;border:1px solid var(--lineSoft);border-radius:12px;overflow:hidden;}
+  .medhead{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--page);}
+  .medhead strong{font-size:14px;}
+  .medrow{width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border:none;border-top:1px solid var(--lineSoft);background:#fff;text-align:left;cursor:pointer;}
+  .medrow.locked{background:#FBFCFD;cursor:default;}
+  .medrow .m-name{flex:1;font-size:14px;color:var(--ink);}
+  .medmark{width:44px;height:40px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;border:1.5px solid var(--lineSoft);}
+  .medsign{padding:10px 12px;border-top:1px solid var(--lineSoft);display:flex;align-items:center;gap:8px;}
+  .medsign .lbl{font-size:12px;color:var(--sub);flex:0 0 auto;}
+  .medsign input{flex:1;padding:9px;border-radius:8px;border:1.5px solid var(--line);font-size:15px;}
+  .mednum{width:72px;padding:8px;border-radius:10px;border:1.5px solid var(--line);font-size:16px;text-align:center;background:#fff;}
+  .mednum:disabled{background:#F1F4F8;}
+
+  /* edit */
+  .editwrap{background:var(--surface);padding:12px 12px 32px;}
+  .vehcard{border:1px solid var(--lineSoft);border-radius:10px;padding:12px;background:#F7F9FC;margin-bottom:16px;}
+  .vehcard .h{font-size:13px;font-weight:700;margin-bottom:8px;}
+  .field .fl{font-size:10px;color:var(--sub);margin-bottom:3px;}
+  .field input,.field select{padding:9px;border-radius:8px;border:1.5px solid var(--line);font-size:15px;background:#fff;}
+  .sec-head{font-size:13px;font-weight:700;color:var(--ink);background:var(--page);padding:7px 12px;border-radius:8px;}
+  .itemcard{border:1px solid var(--lineSoft);border-radius:10px;padding:10px;margin-top:8px;background:#fff;}
+  .itemcard input,.itemcard select{padding:7px;border-radius:8px;border:1.5px solid var(--line);font-size:13px;}
+  .icon-btn{padding:8px 10px;border-radius:8px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-size:13px;font-weight:700;cursor:pointer;}
+  .icon-btn.danger{border-color:#E4B4AE;background:#FCE9E6;color:#C23A26;}
+  .add-btn{margin-top:10px;width:100%;padding:11px;border-radius:10px;border:1.5px dashed var(--accent);background:var(--accentSoft);color:var(--accent);font-weight:700;font-size:14px;cursor:pointer;}
+  .databtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+
+  .note{font-size:11px;color:var(--sub);line-height:1.6;}
+
+  /* form (様式) */
+  .formwrap{background:var(--page);padding:12px 12px 32px;}
+  .formtoolbar{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+  .fscroll{overflow-x:auto;}
+  .fsheet{background:#fff;border:1px solid #333;padding:10px;margin-bottom:6px;}
+  .fsheet .fhead{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:6px;gap:8px;flex-wrap:wrap;}
+  .fsheet .ftitle{font-size:16px;font-weight:800;letter-spacing:2px;}
+  .fsheet .fmeta{text-align:right;font-size:11px;line-height:1.7;}
+  table.ftbl{border-collapse:collapse;width:100%;table-layout:fixed;}
+  table.ftbl th,table.ftbl td{border:1px solid #333;}
+  table.ftbl th{background:#F0F0F0;font-weight:700;text-align:center;font-size:9px;padding:2px;}
+  table.ftbl td{font-size:9.5px;}
+  .pagebreak{height:20px;}
+
+  /* home */
+  .home{padding:20px 16px 34px;}
+  .home .cur{font-size:16px;font-weight:700;margin-bottom:4px;}
+  .home .prog{font-size:12px;color:var(--sub);margin-bottom:16px;}
+  .home-grid{display:flex;flex-direction:column;gap:12px;max-width:520px;}
+  .home-btn{display:flex;align-items:center;gap:14px;padding:18px;border-radius:14px;border:none;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.06);cursor:pointer;text-align:left;width:100%;}
+  .home-btn .ico{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex:0 0 auto;background:var(--page);}
+  .home-btn .tx{flex:1;min-width:0;}
+  .home-btn .tt{font-size:16px;font-weight:700;color:var(--ink);}
+  .home-btn .ds{font-size:12px;color:var(--sub);margin-top:2px;}
+  .home-btn .arw{color:var(--line);font-size:20px;flex:0 0 auto;}
+  .home-btn.primary{background:var(--ink);}
+  .home-btn.primary .tt{color:#fff;} .home-btn.primary .ds{color:#9FB0CE;} .home-btn.primary .ico{background:var(--ink2);} .home-btn.primary .arw{color:var(--ink2);}
+  .home-btn.pdf .ico{background:var(--accentSoft);}
+  .sheet-hint{font-size:11px;color:var(--sub);text-align:center;margin-top:10px;}
+  .sheet-close{width:100%;margin-top:8px;padding:11px;border-radius:12px;border:1.5px solid var(--ink);background:#fff;color:var(--ink);font-size:14px;font-weight:700;cursor:pointer;}
+
+  @media print{
+    .no-print{display:none !important;}
+    @page{size:A4 landscape;margin:6mm;}
+    html,body{background:#fff !important;}
+    #app{padding:0;}
+    .formwrap{padding:0;background:#fff;}
+    .fscroll{overflow:visible;}
+    .fsheet{page-break-inside:avoid;break-inside:avoid;margin-bottom:0;}
+    .pagebreak{page-break-after:always;break-after:page;height:0;}
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ============ 定数 ============ */
+var STATUS = {
+  "":   {sym:"", label:"未入力", bg:"#F1F4F8", fg:"#9AA6B6", short:""},
+  ok:   {sym:"レ",label:"異常なし", bg:"#E7F3EC", fg:"#1F7A44", short:"レ"},
+  tri:  {sym:"△",label:"修理中・支換中（代替品あり）", bg:"#FFF6E5", fg:"#B7791F", short:"△"},
+  x:    {sym:"×",label:"修理中・支換中（代替品なし）", bg:"#FCE9E6", fg:"#C23A26", short:"×"},
+  T:    {sym:"T",label:"要修理・要交換", bg:"#FFEEDD", fg:"#C25A12", short:"T"},
+  S:    {sym:"S",label:"不足・欠品", bg:"#F3E8F7", fg:"#7A2E9B", short:"S"},
+  na:   {sym:"／",label:"該当なし", bg:"#EEF1F5", fg:"#7A879B", short:"／"},
+  circ: {sym:"○",label:"修理後 異常なし（○囲み）", bg:"#E7F3EC", fg:"#1F7A44", short:"○"}
+};
+var STATUS_ORDER = ["ok","tri","x","T","S","na","circ"];
+var ABNORMAL = {tri:1,x:1,T:1,S:1};
+
+var DRUGS = [{id:"d1",name:"エピネフリン"},{id:"d2",name:"ブドウ糖溶液"},{id:"d3",name:"乳酸リンゲル液"}];
+var MED_ITEMS = [
+  {id:"m1",name:"在庫数量"},{id:"m2",name:"使用期限の確認"},{id:"m3",name:"内溶液の漏れの有無"},
+  {id:"m4",name:"内溶液の混濁の有無"},{id:"m5",name:"変色の有無"},{id:"m6",name:"浮遊物の有無"},
+  {id:"m7",name:"輸液回路針刺入部シールのはがれの有無"}
+];
+var SLOTS = [{id:"start",label:"就業時"},{id:"handover",label:"引継ぎ時"}];
+var MED_CYCLE = {"":"ok",ok:"bad",bad:""};
+
+var INITIAL_ITEMS = [
+  {id:"c1",sheet:1,cat:"通信用",name:"携帯電話（前席、後席）",qty:2},
+  {id:"c2",sheet:1,cat:"通信用",name:"携帯無線機（にしじょうさく119）",qty:1},
+  {id:"c3",sheet:1,cat:"通信用",name:"タブレット（iPad）",qty:1},
+  {id:"c4",sheet:1,cat:"通信用",name:"画像伝送スマホ",qty:1},
+  {id:"c5",sheet:1,cat:"通信用",name:"エレベーターキー一式",qty:1},
+  {id:"c6",sheet:1,cat:"通信用",name:"ロボットゲートキー（隊長・機関員・隊員）",qty:3},
+  {id:"c7",sheet:1,cat:"通信用",name:"局49スペアキー（隊長・隊員）",qty:3},
+  {id:"c8",sheet:1,cat:"通信用",name:"薬剤保管庫鍵（新白券）",qty:2},
+  {id:"o1",sheet:1,cat:"その他",name:"公務従事車両証明書",qty:5},
+  {id:"o2",sheet:1,cat:"その他",name:"ETCカード（阪神高速用）",qty:1},
+  {id:"o3",sheet:1,cat:"その他",name:"車検証一式",qty:1},
+  {id:"o4",sheet:1,cat:"その他",name:"マイクロSDカード（ドラレコ用）",qty:1},
+  {id:"o5",sheet:1,cat:"その他",name:"マイナ救急タブレット",qty:1},
+  {id:"e1",sheet:2,cat:"資器材",name:"咽頭鏡",qty:1},
+  {id:"e2",sheet:2,cat:"資器材",name:"パルスオキシメーター",qty:2},
+  {id:"e3",sheet:2,cat:"資器材",name:"血圧計（携帯）",qty:2},
+  {id:"e4",sheet:2,cat:"資器材",name:"体温計",qty:3},
+  {id:"e5",sheet:2,cat:"資器材",name:"聴診器",qty:4},
+  {id:"e6",sheet:2,cat:"資器材",name:"吸引器",qty:1},
+  {id:"e7",sheet:2,cat:"資器材",name:"携帯吸引器",qty:3},
+  {id:"e8",sheet:2,cat:"資器材",name:"血糖値測定器",qty:1},
+  {id:"e9",sheet:2,cat:"資器材",name:"ビデオ喉頭鏡",qty:1},
+  {id:"e10",sheet:2,cat:"資器材",name:"ポケットCO2モニター",qty:1},
+  {id:"e11",sheet:2,cat:"資器材",name:"自動体外式除細動器",qty:1},
+  {id:"e12",sheet:2,cat:"資器材",name:"AED予備バッテリー",qty:2},
+  {id:"e13",sheet:2,cat:"資器材",name:"AED予備SDカード",qty:1},
+  {id:"e14",sheet:2,cat:"資器材",name:"バックボード一式",qty:1},
+  {id:"e15",sheet:2,cat:"資器材",name:"スクープストレッチャー",qty:1},
+  {id:"e16",sheet:2,cat:"資器材",name:"エアストレッチャー",qty:1},
+  {id:"e17",sheet:2,cat:"資器材",name:"ペディスリーブ",qty:1},
+  {id:"e18",sheet:2,cat:"資器材",name:"BVM（成人用）",qty:1},
+  {id:"e19",sheet:2,cat:"資器材",name:"BVM（小児用）",qty:1},
+  {id:"e20",sheet:2,cat:"資器材",name:"BVM（乳児用）",qty:1},
+  {id:"e21",sheet:2,cat:"資器材",name:"布担架",qty:1}
+];
+
+var DAYS = []; for(var i=1;i<=31;i++) DAYS.push(i);
+
+/* ============ ヘルパー ============ */
+function PER(){return state.meta.eraYear+"-"+state.meta.month;}
+function K(id,d){return PER()+"|"+id+":"+d;}
+function SK(d){return PER()+"|"+d;}
+function CK(d,s){return PER()+"|"+d+"#"+s;}
+function MK(dr,d,sl,it){return PER()+"|"+dr+":"+d+":"+sl+":"+it;}
+function MSK(dr,d,sl){return PER()+"|"+dr+":"+d+":"+sl;}
+function prevMedQty(dr,day,slot){
+  var order=[]; for(var d=1;d<=31;d++){ SLOTS.forEach(function(s){ order.push([d,s.id]); }); }
+  var idx=-1; for(var i=0;i<order.length;i++){ if(order[i][0]===day&&order[i][1]===slot){ idx=i; break; } }
+  for(var j=idx-1;j>=0;j--){ var val=state.medRecords[MK(dr,order[j][0],order[j][1],"m1")]||""; if(val!=="") return val; }
+  return "";
+}
+function eraLabel(m){return "令和"+m.eraYear+"年"+m.month+"月";}
+function compiledNotes(){
+  var arr=[];
+  DAYS.forEach(function(d){ var tx=(state.notes[SK(d)]||"").trim(); if(tx) arr.push({day:d,text:tx,label:state.meta.month+"/"+d}); });
+  return arr;
+}
+function newId(){return "n"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function nowStr(){var d=new Date();function p(n){return(n<10?"0":"")+n;}return d.getFullYear()+"/"+p(d.getMonth()+1)+"/"+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes());}
+
+/* ============ 状態 ============ */
+var STORE_KEY = "kyuukyu_hikitsugi_v1";
+var state = null;
+function defaultState(){
+  return {
+    meta:{kyoku:"局49",eraYear:8,month:7,shozoku:"救急課"},
+    items:JSON.parse(JSON.stringify(INITIAL_ITEMS)),
+    records:{}, signs:{}, confirmed:{}, notes:{},
+    medRecords:{}, medSign:{}, medConfirmed:{},
+    ui:{view:"day",day:1,sheet:1,medDrug:"d1",medDay:1,active:null}
+  };
+}
+function migrate(s){
+  // 旧データ（年月キーなし）を、その時点の年月に割り当てて月別に移行
+  var p=(s.meta.eraYear)+"-"+(s.meta.month);
+  ["records","signs","confirmed","notes","medRecords","medSign","medConfirmed"].forEach(function(name){
+    var o=s[name]||{}, n={};
+    Object.keys(o).forEach(function(k){ n[k.indexOf("|")<0?(p+"|"+k):k]=o[k]; });
+    s[name]=n;
+  });
+  return s;
+}
+function load(){
+  try{
+    var raw=localStorage.getItem(STORE_KEY);
+    if(raw){var s=JSON.parse(raw); s.ui=s.ui||defaultState().ui; s.ui.active=null; s.ui.monthPicker=false; if(s.ui.view==="home"||s.ui.view==="grid") s.ui.view="day"; return migrate(s);}
+  }catch(e){}
+  return defaultState();
+}
+function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){} }
+function toTop(){ try{ window.scrollTo(0,0); }catch(e){} if(document.scrollingElement) document.scrollingElement.scrollTop=0; if(document.body) document.body.scrollTop=0; }
+
+/* ============ 描画 ============ */
+var app;
+function render(){
+  var v=state.ui.view;
+  var html = header() + tabs();
+  if(v==="day") html+=viewDay();
+  else if(v==="med") html+=viewMed();
+  else if(v==="form") html+=viewForm();
+  else if(v==="edit") html+=viewEdit();
+  if(state.ui.active) html+=statusSheet();
+  if(state.ui.monthPicker) html+=monthSheet();
+  app.innerHTML=html;
+}
+
+function header(){
+  var m=state.meta;
+  return '<header class="hdr no-print"><div class="hdr-title">'+
+    '<span class="form-no">様式第9号</span><h1>救急資器材引継表</h1>'+
+    '<span class="badge">'+esc(m.kyoku)+'</span>'+
+    '<button class="badge" data-act="pickmonth" style="border:none;cursor:pointer;">'+esc(eraLabel(m))+' ▾</button>'+
+    '</div></header>';
+}
+function tabs(){
+  var v=state.ui.view;
+  function t(id,l){return '<button class="tab'+(v===id?' active':'')+'" data-act="view" data-view="'+id+'">'+l+'</button>';}
+  return '<div class="tabs no-print">'+t("day","資器材")+t("med","薬剤")+t("form","様式")+t("edit","編集")+'</div>';
+}
+
+function chipHTML(code){
+  var s=STATUS[code]||STATUS[""];
+  var txt = code===""? "未" : s.sym;
+  var bd = code===""? "var(--lineSoft)" : s.fg+"55";
+  var fs = code===""? "12px":"18px";
+  return '<span class="chip" style="background:'+s.bg+';color:'+s.fg+';border-color:'+bd+';font-size:'+fs+'">'+txt+'</span>';
+}
+
+function viewDay(){
+  var ui=state.ui, day=ui.day, sheet=ui.sheet;
+  var itemsAll=state.items;
+  var dayItems=itemsAll.filter(function(it){return it.sheet===sheet;});
+  var locked = !!state.confirmed[CK(day,sheet)];
+  // stats (current sheet)
+  var blank=0,abn=0;
+  dayItems.forEach(function(it){var c=state.records[K(it.id,day)]||""; if(!c)blank++; if(ABNORMAL[c])abn++;});
+  // day chips
+  var chips=DAYS.map(function(d){
+    var n=(state.confirmed[CK(d,1)]?1:0)+(state.confirmed[CK(d,2)]?1:0);
+    var filled=0; state.items.forEach(function(it){ if((state.records[K(it.id,d)]||"")!=="") filled++; });
+    var blank=state.items.length-filled;
+    var st = n===2?"done":((blank>0&&filled>0)?"miss":(n===1?"part":""));
+    var cls="daychip"+(d===day?" active":(st?" "+st:""));
+    var mkc = st==="done"?"✓":(st==="miss"?"!":(st==="part"?"•":""));
+    var mk = mkc?'<span class="mk">'+mkc+'</span>':'';
+    return '<button class="'+cls+'" data-act="setday" data-day="'+d+'">'+d+mk+'</button>';
+  }).join("");
+  // list
+  var lastCat=null, rows="";
+  dayItems.forEach(function(it){
+    if(it.cat!==lastCat){lastCat=it.cat; rows+='<div class="cathead">'+esc(it.cat)+'</div>';}
+    var code=state.records[K(it.id,day)]||"";
+    rows+='<button class="listrow'+(locked?" locked":"")+'" '+(locked?"":'data-act="openstatus" data-item="'+it.id+'"')+'>'+
+      '<span class="r-name">'+esc(it.name)+'</span><span class="r-qty">'+it.qty+'</span>'+
+      '<span class="r-chk">'+chipHTML(code)+'</span></button>';
+  });
+  // sign
+  var sg=state.signs[SK(day)]||{};
+  var signHTML;
+  if(sheet===1){
+    signHTML='<div class="field"><div class="lbl">隊長 氏名</div><input class="txt sign-input" data-in="sign" data-role="taicho" data-day="'+day+'" value="'+esc(sg.taicho||"")+'" placeholder="氏名を入力"'+(locked?" disabled":"")+'></div>';
+  }else{
+    signHTML='<div class="field"><div class="lbl">隊員 氏名</div><input class="txt sign-input" data-in="sign" data-role="taiin" data-day="'+day+'" value="'+esc(sg.taiin||"")+'" placeholder="氏名を入力"'+(locked?" disabled":"")+'></div>';
+  }
+  // register block
+  var reg;
+  if(!locked){
+    var missing = sheet===1 ? !((sg.taicho||"").trim()) : !((sg.taiin||"").trim());
+    var note = (blank>0||missing)?'<div class="regnote">'+(blank>0?"未入力が "+blank+" 件あります。":"")+(missing?(sheet===1?"隊長":"隊員")+"が未署名です。":"")+"このまま登録もできます。</div>":"";
+    reg=note+'<button class="btn-primary" data-act="register">'+day+'日 '+(sheet===1?"その1（隊長）":"その2（隊員）")+'を登録</button>';
+  }else{
+    var cf=state.confirmed[CK(day,sheet)];
+    reg='<div class="regdone"><div class="t">✓ '+day+'日 '+(sheet===1?"その1（隊長）":"その2（隊員）")+' 登録済み</div>'+
+      '<div class="s">確認者：'+esc(cf.by||"（未署名）")+' ／ '+esc(cf.at)+'</div>'+
+      '<button class="btn-sm" data-act="unregister">登録を解除して編集</button></div>';
+  }
+  return '<div class="surface">'+
+    '<div class="dayrow">'+chips+'</div>'+
+    '<div class="summary"><strong>'+day+'日</strong>'+
+      '<span class="stat'+(abn?" warn":"")+'">異常 '+abn+' 件 ／ 未入力 '+blank+' 件</span>'+
+      (locked? '<span class="badge-ok" style="margin-left:auto">'+(sheet===1?"その1":"その2")+' 登録済み ✓</span>' : '')+
+    '</div>'+
+    '<div class="bigseg">'+
+      '<button class="bigpill'+(sheet===1?" active":"")+'" data-act="setsheet" data-sheet="1"><span class="lg">その1</span><span class="sub">通信・その他</span></button>'+
+      '<button class="bigpill'+(sheet===2?" active":"")+'" data-act="setsheet" data-sheet="2"><span class="lg">その2</span><span class="sub">資器材</span></button>'+
+    '</div>'+
+    '<div class="segnote" style="display:flex;align-items:center;">'+(sheet===1?"隊長用":"機関員・隊員用")+
+      (locked? '' : '<button class="btn" style="margin-left:auto;padding:6px 10px;font-size:12px;" data-act="bulkok">全て✓</button>')+
+    '</div>'+
+    '<div class="colhead"><div class="c-name">資器材名</div><div class="c-qty">数量</div><div class="c-chk">点検</div></div>'+
+    rows+
+    tokkiInput(day)+
+    '<div class="signblk"><div class="lbl">確認者署名（'+day+'日 ・ '+(sheet===1?"その1／隊長":"その2／隊員")+'）</div>'+signHTML+'</div>'+
+    '<div class="regblk">'+reg+'</div>'+
+    tokkiList()+
+    '</div>';
+}
+
+function tokkiInput(day){
+  return '<div class="signblk"><div class="lbl">特記事項（'+day+'日）</div>'+
+    '<textarea class="txt" data-in="note" data-day="'+day+'" rows="2" placeholder="異常や引継ぎ事項を記入（日付は自動で付きます）">'+esc(state.notes[SK(day)]||"")+'</textarea>'+
+    '</div>';
+}
+function tokkiList(){
+  var notes=compiledNotes();
+  var list = notes.length
+    ? '<div class="noteslist">'+notes.map(function(n){return '<div class="noteitem"><strong>'+n.label+'</strong>　'+esc(n.text)+'</div>';}).join("")+'</div>'
+    : '<div class="note">まだありません</div>';
+  return '<div class="signblk" style="padding-bottom:24px;"><div class="lbl">今月の特記事項（様式に反映されます）</div>'+list+'</div>';
+}
+
+function monthSheet(){
+  var m=state.meta;
+  var years=[6,7,8,9,10,11,12].map(function(y){return '<option value="'+y+'"'+(m.eraYear===y?" selected":"")+'>令和'+y+'</option>';}).join("");
+  var months=DAYS.slice(0,12).map(function(mo){return '<option value="'+mo+'"'+(m.month===mo?" selected":"")+'>'+mo+'月</option>';}).join("");
+  var selStyle="flex:1;padding:14px;border-radius:10px;border:1.5px solid var(--line);font-size:17px;background:#fff;";
+  return '<div class="overlay" data-act="closemonth"><div class="sheet" data-stop="1">'+
+    '<div class="grip"></div>'+
+    '<div class="s-name">年月の選択</div>'+
+    '<div class="s-sub">帳票・入力の対象月を切り替えます</div>'+
+    '<div style="display:flex;gap:10px;">'+
+      '<select data-in="meta-erayear" style="'+selStyle+'">'+years+'</select>'+
+      '<select data-in="meta-month" style="'+selStyle+'">'+months+'</select>'+
+    '</div>'+
+    '<button class="sheet-close" data-act="monthdone" style="background:var(--accent);color:#fff;border:none;margin-top:14px;">完了</button>'+
+    '</div></div>';
+}
+
+function statusSheet(){
+  var id=state.ui.active, day=state.ui.day, sheet=state.ui.sheet;
+  var listA=state.items.filter(function(it){return it.sheet===sheet;});
+  var idx=-1; for(var qi=0;qi<listA.length;qi++){if(listA[qi].id===id){idx=qi;break;}}
+  var it=(idx>=0?listA[idx]:state.items.filter(function(x){return x.id===id;})[0]);
+  if(!it) return "";
+  var pos=(idx>=0?(idx+1)+" / "+listA.length:"");
+  var isLast=(idx>=0 && idx+1>=listA.length);
+  var cur=state.records[K(id,day)]||"";
+  var opts=STATUS_ORDER.map(function(k){
+    var s=STATUS[k], sel=cur===k;
+    return '<button class="opt" data-act="pick" data-code="'+k+'" style="'+(sel?"border-color:"+s.fg+";background:"+s.bg:"")+'">'+
+      '<span class="osym" style="background:'+s.bg+';color:'+s.fg+'">'+s.sym+'</span>'+
+      '<span class="olbl">'+esc(s.label)+'</span></button>';
+  }).join("");
+  return '<div class="overlay" data-act="closesheet"><div class="sheet" data-stop="1">'+
+    '<div class="grip"></div>'+
+    '<div class="s-name">'+esc(it.name)+'　<span style="color:var(--sub);font-weight:400;font-size:12px;">'+pos+'</span></div>'+
+    '<div class="s-sub">'+day+'日 ・ 数量 '+it.qty+'</div>'+
+    '<div class="opts">'+opts+'<button class="opt-clear" data-act="pick" data-code="">クリア（未入力に戻す）</button></div>'+
+    '<div class="sheet-hint">'+(isLast?"最後の項目です。選ぶと入力を終了します。":"選ぶと自動で次の項目へ進みます")+'</div>'+
+    '<button class="sheet-close" data-act="endinput">入力を終了</button>'+
+    '</div></div>';
+}
+
+function viewMed(){
+  var dr=state.ui.medDrug, day=state.ui.medDay, m=state.meta;
+  var drugName=DRUGS.filter(function(x){return x.id===dr;})[0].name;
+  var drugChips=DRUGS.map(function(d){return '<button class="bigpill'+(dr===d.id?" active":"")+'" data-act="meddrug" data-drug="'+d.id+'">'+esc(d.name)+'</button>';}).join("");
+  var dayChips=DAYS.map(function(d){
+    var n=(state.medConfirmed[MSK(dr,d,"start")]?1:0)+(state.medConfirmed[MSK(dr,d,"handover")]?1:0);
+    var filled=0,total=0;
+    SLOTS.forEach(function(sl){ MED_ITEMS.forEach(function(it){ total++; if((state.medRecords[MK(dr,d,sl.id,it.id)]||"")!=="") filled++; }); });
+    var blank=total-filled;
+    var st=n===2?"done":((blank>0&&filled>0)?"miss":(n===1?"part":""));
+    var cls="daychip"+(d===day?" active":(st?" "+st:""));
+    var mkc=st==="done"?"✓":(st==="miss"?"!":(st==="part"?"•":""));
+    var mk=mkc?'<span class="mk">'+mkc+'</span>':'';
+    return '<button class="'+cls+'" data-act="medday" data-day="'+d+'">'+d+mk+'</button>';
+  }).join("");
+  var slotsHTML=SLOTS.map(function(slot){
+    var locked=!!state.medConfirmed[MSK(dr,day,slot.id)];
+    var bad=MED_ITEMS.filter(function(it){return (state.medRecords[MK(dr,day,slot.id,it.id)]||"")==="bad";}).length;
+    var rows=MED_ITEMS.map(function(it){
+      var v=state.medRecords[MK(dr,day,slot.id,it.id)]||"";
+      if(it.id==="m1"){
+        var opts='<option value="">－</option>';
+        for(var q=0;q<=20;q++){ opts+='<option value="'+q+'"'+(v===String(q)?" selected":"")+'>'+q+'</option>'; }
+        var carry=(v===""&&!locked)?prevMedQty(dr,day,slot.id):"";
+        var carryBtn = carry!=="" ? '<button class="btn" style="padding:6px 10px;font-size:12px;margin-left:8px;flex:0 0 auto;" data-act="medcarry" data-slot="'+slot.id+'" data-item="'+it.id+'" data-val="'+esc(carry)+'">前日 '+esc(carry)+' を引継</button>' : "";
+        return '<div class="medrow'+(locked?" locked":"")+'" style="cursor:default;">'+
+          '<span class="m-name">'+esc(it.name)+'</span>'+carryBtn+
+          '<select class="mednum" data-in="mednum" data-slot="'+slot.id+'" data-item="'+it.id+'"'+(locked?" disabled":"")+'>'+opts+'</select></div>';
+      }
+      var mp={"":{t:"－",bg:"#F1F4F8",fg:"#9AA6B6",bd:"var(--lineSoft)"},ok:{t:"✓",bg:"#E7F3EC",fg:"#1F7A44",bd:"#1F7A4455"},bad:{t:"×",bg:"#FCE9E6",fg:"#C23A26",bd:"#C23A2655"}}[v]||{t:"－",bg:"#F1F4F8",fg:"#9AA6B6",bd:"var(--lineSoft)"};
+      return '<button class="medrow'+(locked?" locked":"")+'" '+(locked?"":'data-act="medcycle" data-slot="'+slot.id+'" data-item="'+it.id+'"')+'>'+
+        '<span class="m-name">'+esc(it.name)+'</span>'+
+        '<span class="medmark" style="background:'+mp.bg+';color:'+mp.fg+';border-color:'+mp.bd+'">'+mp.t+'</span></button>';
+    }).join("");
+    var signName=state.medSign[MSK(dr,day,slot.id)]||"";
+    var head='<div class="medhead"><strong>'+slot.label+'</strong>'+
+      (bad>0?'<span style="font-size:11px;color:#C23A26;font-weight:700;">異常 '+bad+' 件</span>':"")+
+      (locked?'<span class="badge-ok" style="margin-left:auto">登録済み ✓</span>'
+             :'<button class="btn" style="margin-left:auto;padding:6px 10px;font-size:12px;" data-act="medallok" data-slot="'+slot.id+'">全て✓</button>')+
+      '</div>';
+    var sign='<div class="medsign"><span class="lbl">点検実施者</span><input data-in="medsign" data-slot="'+slot.id+'" value="'+esc(signName)+'" placeholder="氏名"'+(locked?" disabled":"")+'></div>';
+    var reg;
+    if(!locked){
+      reg='<div style="padding:0 12px 12px;"><button class="btn-primary" style="padding:12px;font-size:15px;" data-act="medregister" data-slot="'+slot.id+'">'+esc(drugName)+'・'+slot.label+'を登録</button></div>';
+    }else{
+      var cf=state.medConfirmed[MSK(dr,day,slot.id)];
+      reg='<div style="padding:0 12px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--sub);">'+
+        '<span>実施者：'+esc(cf.by||"（未入力）")+' ／ '+esc(cf.at)+'</span>'+
+        '<button class="btn-sm" style="margin-top:0;margin-left:auto;" data-act="medunregister" data-slot="'+slot.id+'">登録を解除</button></div>';
+    }
+    return '<div class="medcard">'+head+rows+sign+reg+'</div>';
+  }).join("");
+  return '<div class="surface">'+
+    '<div class="dayrow" style="padding:12px 12px 10px;">'+dayChips+'</div>'+
+    '<div class="bigseg">'+drugChips+'</div>'+
+    '<div class="segnote">所属：'+esc(m.shozoku)+'</div>'+
+    '<div style="padding:6px 16px 4px;font-size:14px;font-weight:700;">'+esc(drugName)+'　'+m.month+'/'+day+'</div>'+
+    slotsHTML+
+    '<p class="note" style="padding:0 16px 24px;">タップで ✓（異常なし）→ ×（異常）→ 空 を切り替えます。日付は3剤で共通です。</p>'+
+    '</div>';
+}
+
+function viewEdit(){
+  var m=state.meta;
+  function itemCard(it){
+    return '<div class="itemcard">'+
+      '<input style="width:100%" data-in="edit-name" data-id="'+it.id+'" value="'+esc(it.name)+'" placeholder="資器材名">'+
+      '<div style="display:flex;gap:6px;margin-top:8px;align-items:flex-end;flex-wrap:wrap;">'+
+        '<div class="field"><div class="fl">分類</div><input style="width:96px" data-in="edit-cat" data-id="'+it.id+'" value="'+esc(it.cat)+'"></div>'+
+        '<div class="field"><div class="fl">数量</div><input type="number" inputmode="numeric" min="0" style="width:60px;text-align:center" data-in="edit-qty" data-id="'+it.id+'" value="'+it.qty+'"></div>'+
+        '<div class="field"><div class="fl">シート</div><select data-in="edit-sheet" data-id="'+it.id+'"><option value="1"'+(it.sheet===1?" selected":"")+'>その1</option><option value="2"'+(it.sheet===2?" selected":"")+'>その2</option></select></div>'+
+        '<div style="margin-left:auto;display:flex;gap:4px;">'+
+          '<button class="icon-btn" data-act="edit-move" data-id="'+it.id+'" data-dir="-1">↑</button>'+
+          '<button class="icon-btn" data-act="edit-move" data-id="'+it.id+'" data-dir="1">↓</button>'+
+          '<button class="icon-btn danger" data-act="edit-remove" data-id="'+it.id+'">削除</button>'+
+        '</div>'+
+      '</div></div>';
+  }
+  function sheetBlock(s){
+    var list=state.items.filter(function(i){return i.sheet===s;});
+    return '<div style="margin-bottom:18px;"><div class="sec-head">'+(s===1?"その1（通信用・その他）":"その2（資器材）")+'</div>'+
+      list.map(itemCard).join("")+
+      '<button class="add-btn" data-act="edit-add" data-sheet="'+s+'">＋ 行を追加（'+(s===1?"その1":"その2")+'）</button></div>';
+  }
+  return '<div class="editwrap">'+
+    '<div class="vehcard"><div class="h">車両情報</div>'+
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">'+
+        '<div class="field" style="flex:1;min-width:130px;"><div class="fl">車両名称（局）</div><input style="width:100%" data-in="meta-kyoku" value="'+esc(m.kyoku)+'"></div>'+
+        '<div class="field"><div class="fl">年（令和）</div><select data-in="meta-erayear">'+[6,7,8,9,10,11,12].map(function(y){return '<option value="'+y+'"'+(m.eraYear===y?" selected":"")+'>令和'+y+'</option>';}).join("")+'</select></div>'+
+        '<div class="field"><div class="fl">月</div><select data-in="meta-month">'+DAYS.slice(0,12).map(function(mo){return '<option value="'+mo+'"'+(m.month===mo?" selected":"")+'>'+mo+'月</option>';}).join("")+'</select></div>'+
+      '</div>'+
+      '<div class="note" style="margin-top:8px;">対象：'+esc(eraLabel(m))+'</div>'+
+      '<div class="field" style="margin-top:10px;"><div class="fl">所属名（薬剤点検表に表示）</div><input style="width:100%" data-in="meta-shozoku" value="'+esc(m.shozoku)+'"></div>'+
+    '</div>'+
+    '<p class="note" style="margin:4px 4px 12px;">資器材名・数量・分類を編集できます。追加・削除・並べ替えも可能です。</p>'+
+    sheetBlock(1)+sheetBlock(2)+
+    '<div class="vehcard"><div class="h">データのバックアップ・引き継ぎ</div>'+
+      '<p class="note">入力データはこの端末の中だけに保存されます。タブレットを替えるときは、次の手順で丸ごと引き継げます。<br>'+
+      '① 旧端末で「バックアップを保存」→ JSONファイルができます（ファイル／メール／AirDrop等で新端末へ）。<br>'+
+      '② 新端末でこのアプリを開き「バックアップを読込」→ そのJSONを選ぶと、資器材名・数量・記録・署名まで全て復元されます。<br>'+
+      '※ 車両ごとに資器材が違う場合は、車両ごとにバックアップJSONを分けて保管してください。</p>'+
+      '<div class="databtns">'+
+        '<button class="btn" data-act="export">バックアップを保存（JSON）</button>'+
+        '<button class="btn" data-act="import">バックアップを読込</button>'+
+        '<button class="icon-btn danger" data-act="reset">全データ消去</button>'+
+      '</div></div>'+
+    '</div>';
+}
+
+/* 様式（PDF用） */
+function viewForm(){
+  var m=state.meta;
+  var html='<div class="formwrap">'+
+    '<div class="formtoolbar no-print">'+
+      '<button class="btn-primary" style="width:auto;padding:12px 18px;font-size:15px;" data-act="genpdf">PDFを作成・保存</button>'+
+      '<span class="note">'+esc(eraLabel(m))+' 分（資器材その1・その2＋薬剤3剤）を1つのPDFにまとめて保存します。オフラインのときは、この画面を単独のブラウザタブで開き「印刷」からPDF保存してください。</span>'+
+    '</div><div class="fscroll">'+
+      formSheet(1)+'<div class="pagebreak"></div>'+formSheet(2);
+  DRUGS.forEach(function(dg){ html+='<div class="pagebreak"></div>'+medFormSheet(dg); });
+  html+='</div></div>';
+  return html;
+}
+function formSheet(sheetNo){
+  var m=state.meta;
+  var list=state.items.filter(function(i){return i.sheet===sheetNo;});
+  var youto=sheetNo===1?"隊長用":"機関員・隊員用";
+  var sub=sheetNo===1?"（その1）":"（その2）";
+  // groups
+  var groups=[]; list.forEach(function(it){var g=null;for(var k=0;k<groups.length;k++){if(groups[k].cat===it.cat){g=groups[k];break;}} if(!g){g={cat:it.cat,rows:[]};groups.push(g);} g.rows.push(it);});
+  var head='<tr><th style="width:42px;">分類</th><th style="width:150px;">品名</th><th style="width:30px;">数量</th>'+DAYS.map(function(d){return '<th style="width:20px;">'+d+'</th>';}).join("")+'</tr>';
+  var body="";
+  groups.forEach(function(g){
+    g.rows.forEach(function(it,ri){
+      var tr="<tr>";
+      if(ri===0){ tr+='<td rowspan="'+g.rows.length+'" style="text-align:center;font-weight:700;background:#FAFAFA;writing-mode:vertical-rl;padding:2px;font-size:10px;">'+esc(g.cat)+'</td>'; }
+      tr+='<td style="padding:2px 4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'+esc(it.name)+'</td>';
+      tr+='<td style="text-align:center;font-size:10px;">'+it.qty+'</td>';
+      DAYS.forEach(function(d){var c=state.records[K(it.id,d)]||""; var s=STATUS[c];
+        tr+='<td style="text-align:center;font-size:10px;font-weight:700;color:'+(c?"#111":"transparent")+'">'+(c?s.short:"")+'</td>';});
+      tr+="</tr>"; body+=tr;
+    });
+  });
+  // confirm row
+  var conf='<tr><td colspan="2" style="background:#F0F0F0;font-weight:700;text-align:center;font-size:9px;">確認者署名</td><td style="background:#F0F0F0;"></td>';
+  DAYS.forEach(function(d){var sg=state.signs[SK(d)]||{}; var nm=sheetNo===1?(sg.taicho||""):(sg.taiin||"");
+    conf+='<td style="height:64px;text-align:center;vertical-align:middle;font-size:9px;padding:0;"><span style="writing-mode:vertical-rl;display:inline-block;white-space:nowrap;line-height:1;">'+esc(nm)+'</span></td>';});
+  conf+='</tr>';
+  var notesHTML=compiledNotes().map(function(n){return '<strong>'+n.label+'</strong> '+esc(n.text);}).join("<br>");
+  var tokki='<tr><td colspan="3" style="background:#F0F0F0;font-weight:700;text-align:center;font-size:9px;">特記事項（各隊員共通）</td><td colspan="31" style="height:46px;padding:3px 6px;font-size:9px;line-height:1.5;vertical-align:top;">'+notesHTML+'</td></tr>';
+  return '<div class="fsheet" style="min-width:900px;">'+
+    '<div class="fhead"><div><div style="font-size:10px;color:#333;">様式第9号（第34条関係）</div>'+
+      '<div class="ftitle">救急資器材引継表'+sub+'</div></div>'+
+      '<div class="fmeta"><div>車両名称 〜 '+esc(m.kyoku)+'　【'+youto+'】</div><div>'+esc(eraLabel(m))+'</div></div></div>'+
+    '<table class="ftbl"><thead>'+head+'</thead><tbody>'+body+conf+tokki+'</tbody></table>'+
+    '<div style="font-size:8.5px;color:#333;margin-top:5px;line-height:1.6;">（備考）点検記号：レ＝異常なし／△＝修理中・支換中（代替品あり）／×＝修理中・支換中（代替品なし）／T＝要修理・要交換／S＝不足・欠品／／＝該当なし。調整・修理等を行い異常がなくなれば記号を○で囲むこと。</div>'+
+    '</div>';
+}
+function medFormSheet(drug){
+  var m=state.meta;
+  var weeks=[]; for(var s=1;s<=31;s+=7) weeks.push(DAYS.slice(s-1,s+6));
+  function mark(d,slot,it){var v=state.medRecords[MK(drug.id,d,slot,it)]||""; if(it==="m1") return esc(v); return v==="ok"?"✓":v==="bad"?"×":"";}
+  var tables=weeks.map(function(wk){
+    var colg='<colgroup><col style="width:150px">'+wk.map(function(){return '<col style="width:34px"><col style="width:34px">';}).join("")+'</colgroup>';
+    var h1='<tr><th rowspan="2" style="width:150px;">点検日<br>点検項目</th>'+wk.map(function(d){return '<th colspan="2">'+m.month+'/'+d+'</th>';}).join("")+'</tr>';
+    var h2='<tr>'+wk.map(function(d){return '<th style="width:34px;">就業時</th><th style="width:34px;">引継ぎ時</th>';}).join("")+'</tr>';
+    var body=MED_ITEMS.map(function(it){
+      return '<tr><td style="font-size:9px;padding:2px 4px;">'+esc(it.name)+'</td>'+
+        wk.map(function(d){return '<td style="text-align:center;font-size:10px;font-weight:700;">'+mark(d,"start",it.id)+'</td><td style="text-align:center;font-size:10px;font-weight:700;">'+mark(d,"handover",it.id)+'</td>';}).join("")+'</tr>';
+    }).join("");
+    var signrow='<tr><td style="background:#F0F0F0;font-weight:700;text-align:center;font-size:9px;">点検実施者</td>'+
+      wk.map(function(d){
+        var a=state.medSign[MSK(drug.id,d,"start")]||"", b=state.medSign[MSK(drug.id,d,"handover")]||"";
+        return '<td style="height:54px;text-align:center;font-size:8px;padding:0;"><span style="writing-mode:vertical-rl;display:inline-block;white-space:nowrap;line-height:1;">'+esc(a)+'</span></td>'+
+               '<td style="height:54px;text-align:center;font-size:8px;padding:0;"><span style="writing-mode:vertical-rl;display:inline-block;white-space:nowrap;line-height:1;">'+esc(b)+'</span></td>';
+      }).join("")+'</tr>';
+    return '<table class="ftbl" style="width:auto;table-layout:fixed;margin-bottom:8px;">'+colg+'<thead>'+h1+h2+'</thead><tbody>'+body+signrow+'</tbody></table>';
+  }).join("");
+  return '<div class="fsheet med" style="min-width:760px;">'+
+    '<div class="fhead"><div><div class="ftitle">薬 剤 点 検 記 録 表</div>'+
+      '<div style="font-size:13px;font-weight:700;margin-top:2px;">（　'+esc(drug.name)+'　）</div></div>'+
+      '<div class="fmeta"><div>所属名（　'+esc(m.shozoku)+'　）</div><div>'+esc(eraLabel(m))+'</div></div></div>'+
+    tables+
+    '<div style="font-size:8.5px;color:#333;line-height:1.6;">（備考）点検記号：✓＝異常なし／×＝異常あり。異常があれば速やかに報告し、特記事項に記載すること。</div>'+
+    '</div>';
+}
+
+/* ============ イベント ============ */
+function handleClick(e){
+  var t=e.target.closest('[data-act]'); 
+  // bottom sheet: tap inside panel shouldn't close
+  var stop=e.target.closest('[data-stop]');
+  if(!t) return;
+  var act=t.getAttribute('data-act');
+  var ui=state.ui;
+  if(act==="view"){ ui.view=t.getAttribute('data-view'); ui.active=null; save(); render(); toTop(); }
+  else if(act==="pickmonth"){ ui.monthPicker=true; render(); }
+  else if(act==="closemonth"){ if(!stop){ ui.monthPicker=false; render(); } }
+  else if(act==="monthdone"){ ui.monthPicker=false; render(); toTop(); }
+  else if(act==="setday"){ ui.day=+t.getAttribute('data-day'); save(); render(); toTop(); }
+  else if(act==="setsheet"){ ui.sheet=+t.getAttribute('data-sheet'); save(); render(); toTop(); }
+  else if(act==="bulkok"){ var sh=ui.sheet; state.items.filter(function(it){return it.sheet===sh;}).forEach(function(it){state.records[K(it.id,ui.day)]="ok";}); save(); render(); }
+  else if(act==="openstatus"){ ui.active=t.getAttribute('data-item'); render(); }
+  else if(act==="closesheet"){ if(!stop){ ui.active=null; render(); } }
+  else if(act==="endinput"){ ui.active=null; render(); }
+  else if(act==="pick"){
+    var code=t.getAttribute('data-code');
+    state.records[K(ui.active,ui.day)]=code;
+    var listP=state.items.filter(function(it){return it.sheet===ui.sheet;});
+    var pi=-1; for(var z=0;z<listP.length;z++){if(listP[z].id===ui.active){pi=z;break;}}
+    if(pi>=0 && pi+1<listP.length){ ui.active=listP[pi+1].id; } else { ui.active=null; }
+    save(); render();
+  }
+  else if(act==="register"){ doRegister(); }
+  else if(act==="unregister"){ delete state.confirmed[CK(ui.day,ui.sheet)]; save(); render(); }
+  else if(act==="meddrug"){ ui.medDrug=t.getAttribute('data-drug'); save(); render(); toTop(); }
+  else if(act==="medday"){ ui.medDay=+t.getAttribute('data-day'); save(); render(); toTop(); }
+  else if(act==="medcycle"){ var sl=t.getAttribute('data-slot'),itm=t.getAttribute('data-item'); var kk=MK(ui.medDrug,ui.medDay,sl,itm); state.medRecords[kk]=MED_CYCLE[state.medRecords[kk]||""]; save(); render(); }
+  else if(act==="medallok"){ var sl2=t.getAttribute('data-slot'); MED_ITEMS.forEach(function(it){ if(it.id!=="m1") state.medRecords[MK(ui.medDrug,ui.medDay,sl2,it.id)]="ok"; }); save(); render(); }
+  else if(act==="medcarry"){ state.medRecords[MK(ui.medDrug,ui.medDay,t.getAttribute('data-slot'),t.getAttribute('data-item'))]=t.getAttribute('data-val'); save(); render(); }
+  else if(act==="medregister"){ var sl3=t.getAttribute('data-slot'); state.medConfirmed[MSK(ui.medDrug,ui.medDay,sl3)]={at:nowStr(),by:state.medSign[MSK(ui.medDrug,ui.medDay,sl3)]||""}; if(sl3==="handover"){ if(dayComplete(ui.medDay)){ ui.view="day"; ui.day=Math.min(31,ui.medDay+1); ui.sheet=1; } else { var dO=["d1","d2","d3"]; var ci=dO.indexOf(ui.medDrug); if(ci>=0&&ci+1<dO.length){ ui.medDrug=dO[ci+1]; } } save(); render(); toTop(); } else { var sy2=window.pageYOffset||0; save(); render(); try{ window.scrollTo(0,sy2); }catch(e){} } }
+  else if(act==="medunregister"){ var sl4=t.getAttribute('data-slot'); delete state.medConfirmed[MSK(ui.medDrug,ui.medDay,sl4)]; save(); render(); }
+  else if(act==="edit-add"){ var s=+t.getAttribute('data-sheet'); state.items.push({id:newId(),sheet:s,cat:s===1?"その他":"資器材",name:"",qty:1}); save(); render(); }
+  else if(act==="edit-remove"){ var id=t.getAttribute('data-id'); state.items=state.items.filter(function(x){return x.id!==id;}); save(); render(); }
+  else if(act==="edit-move"){ moveItem(t.getAttribute('data-id'), +t.getAttribute('data-dir')); save(); render(); }
+  else if(act==="print"){ window.print(); }
+  else if(act==="genpdf"){ genPDF(); }
+  else if(act==="export"){ doExport(); }
+  else if(act==="import"){ doImport(); }
+  else if(act==="reset"){ if(confirm("すべての入力データと設定を消去します。よろしいですか？")){ state=defaultState(); save(); render(); } }
+}
+function dayComplete(day){
+  if(!(state.confirmed[CK(day,1)]&&state.confirmed[CK(day,2)])) return false;
+  for(var i=0;i<DRUGS.length;i++){ for(var j=0;j<SLOTS.length;j++){ if(!state.medConfirmed[MSK(DRUGS[i].id,day,SLOTS[j].id)]) return false; } }
+  return true;
+}
+function doRegister(){
+  var ui=state.ui, sg=state.signs[SK(ui.day)]||{}, names=[];
+  if(ui.sheet===1){ if(sg.taicho) names.push("隊長 "+sg.taicho); }
+  else{ if(sg.taiin) names.push("隊員 "+sg.taiin); }
+  state.confirmed[CK(ui.day,ui.sheet)]={at:nowStr(),by:names.join(" ／ ")};
+  // 自動移動：1日完了なら翌日その1、そうでなければ その1→その2→薬剤
+  if(dayComplete(ui.day)){ ui.view="day"; ui.day=Math.min(31,ui.day+1); ui.sheet=1; }
+  else if(ui.sheet===1){ ui.sheet=2; }
+  else { ui.view="med"; ui.medDrug="d1"; ui.medDay=ui.day; }
+  save(); render(); toTop();
+}
+function moveItem(id,dir){
+  var list=state.items, i=-1; for(var k=0;k<list.length;k++){if(list[k].id===id){i=k;break;}}
+  var j=i+dir; if(i<0||j<0||j>=list.length) return;
+  var tmp=list[i]; list[i]=list[j]; list[j]=tmp;
+}
+function handleInput(e){
+  var t=e.target.closest('[data-in]'); if(!t) return;
+  var kind=t.getAttribute('data-in'), val=t.value, ui=state.ui;
+  if(kind==="sign"){ var role=t.getAttribute('data-role'), day=+t.getAttribute('data-day'); state.signs[SK(day)]=state.signs[SK(day)]||{}; state.signs[SK(day)][role]=val; }
+  else if(kind==="medsign"){ var sl=t.getAttribute('data-slot'); state.medSign[MSK(ui.medDrug,ui.medDay,sl)]=val; }
+  else if(kind==="mednum"){ state.medRecords[MK(ui.medDrug,ui.medDay,t.getAttribute('data-slot'),t.getAttribute('data-item'))]=val; }
+  else if(kind==="note"){ state.notes[SK(+t.getAttribute('data-day'))]=val; }
+  else if(kind==="meta-kyoku"){ state.meta.kyoku=val; updateBadges(); }
+  else if(kind==="meta-shozoku"){ state.meta.shozoku=val; }
+  else if(kind==="edit-name"){ setItemField(t.getAttribute('data-id'),"name",val); }
+  else if(kind==="edit-cat"){ setItemField(t.getAttribute('data-id'),"cat",val); }
+  else if(kind==="edit-qty"){ setItemField(t.getAttribute('data-id'),"qty",Math.max(0,parseInt(val)||0)); }
+  save();
+}
+function handleChange(e){
+  var t=e.target.closest('[data-in]'); if(!t) return;
+  var kind=t.getAttribute('data-in');
+  if(kind==="meta-erayear"||kind==="meta-month"){
+    if(kind==="meta-erayear") state.meta.eraYear=+t.value; else state.meta.month=+t.value;
+    if(state.ui.monthPicker){ state.ui.view="day"; state.ui.day=1; state.ui.sheet=1; state.ui.medDay=1; }
+    save(); render(); if(state.ui.monthPicker) toTop();
+  }
+  else if(kind==="edit-sheet"){ setItemField(t.getAttribute('data-id'),"sheet",+t.value); save(); render(); }
+  else if(kind==="note"){ save(); render(); }
+  else if(kind==="mednum"){ state.medRecords[MK(state.ui.medDrug,state.ui.medDay,t.getAttribute('data-slot'),t.getAttribute('data-item'))]=t.value; save(); render(); }
+}
+function setItemField(id,field,val){ state.items.forEach(function(it){if(it.id===id) it[field]=val;}); }
+function updateBadges(){ var bs=document.querySelectorAll('.hdr .badge'); if(bs[0]) bs[0].textContent=state.meta.kyoku; }
+
+/* バックアップ */
+function pdfBusy(on){
+  var id="pdfbusy", e=document.getElementById(id);
+  if(on){ if(!e){ e=document.createElement("div"); e.id=id; e.style.cssText="position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:200;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700;font-family:inherit;"; e.textContent="PDFを作成中…"; document.body.appendChild(e);} }
+  else if(e){ e.parentNode.removeChild(e); }
+}
+function genPDF(){
+  if(!(window.jspdf&&window.jspdf.jsPDF&&window.html2canvas)){
+    alert("PDFの直接作成にはネット接続が必要です。オフラインのときは、この画面を単独のブラウザタブで開き「印刷」からPDF保存してください。");
+    try{ window.print(); }catch(e){}
+    return;
+  }
+  var sheets=document.querySelectorAll(".fscroll .fsheet");
+  if(!sheets.length) return;
+  pdfBusy(true);
+  var jsPDF=window.jspdf.jsPDF;
+  var firstMed=sheets[0].classList.contains("med");
+  var pdf=new jsPDF({orientation:firstMed?"portrait":"landscape",unit:"mm",format:"a4"});
+  var m=6, i=0;
+  function next(){
+    if(i>=sheets.length){ finish(); return; }
+    var isMed=sheets[i].classList.contains("med");
+    if(i>0){ pdf.addPage("a4", isMed?"portrait":"landscape"); }
+    var pw=pdf.internal.pageSize.getWidth(), ph=pdf.internal.pageSize.getHeight();
+    html2canvas(sheets[i],{scale:2,backgroundColor:"#ffffff",windowWidth:sheets[i].scrollWidth}).then(function(canvas){
+      var img=canvas.toDataURL("image/jpeg",0.92);
+      // 枠いっぱいに拡大：幅・高さの制約のうち厳しい方に合わせ、中央配置
+      var availW=pw-m*2, availH=ph-m*2;
+      var iw=availW, ih=canvas.height*availW/canvas.width;
+      if(ih>availH){ ih=availH; iw=canvas.width*availH/canvas.height; }
+      pdf.addImage(img,"JPEG",(pw-iw)/2,(ph-ih)/2,iw,ih);
+      i++; next();
+    }).catch(function(){ pdfBusy(false); alert("PDFの作成に失敗しました。"); });
+  }
+  function finish(){
+    var name="救急資器材引継表_"+eraLabel(state.meta)+".pdf";
+    var blob=pdf.output("blob");
+    if(window.claude&&claude.use){
+      claude.use("downloads").then(function(d){
+        if(d&&d.save){ d.save({filename:name,data:blob}).then(function(){pdfBusy(false);}).catch(function(){pdfBusy(false);}); }
+        else { pdf.save(name); pdfBusy(false); }
+      }).catch(function(){ pdf.save(name); pdfBusy(false); });
+    } else { pdf.save(name); pdfBusy(false); }
+  }
+  next();
+}
+function blobDownload(name,text){
+  try{
+    var blob=new Blob([text],{type:"application/json"});
+    var url=URL.createObjectURL(blob), a=document.createElement("a");
+    a.href=url; a.download=name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(url);},1000);
+  }catch(e){ alert("保存に失敗しました。"); }
+}
+function doExport(){
+  var name="引継表バックアップ_"+eraLabel(state.meta)+".json";
+  var text=JSON.stringify(state,null,2);
+  if(window.claude&&claude.use){
+    claude.use("downloads").then(function(d){
+      if(d&&d.save){ d.save({filename:name,data:text}); } else { blobDownload(name,text); }
+    }).catch(function(){ blobDownload(name,text); });
+    return;
+  }
+  blobDownload(name,text);
+}
+function doImport(){
+  var inp=document.createElement("input"); inp.type="file"; inp.accept="application/json,.json";
+  inp.onchange=function(){ var f=inp.files[0]; if(!f) return; var r=new FileReader();
+    r.onload=function(){
+      try{
+        var s=JSON.parse(r.result);
+        if(!s || !s.items){ alert("このファイルは引き継ぎデータではないようです。"); return; }
+        if(!confirm("読み込むと、この端末の現在のデータは上書きされます。よろしいですか？")) return;
+        s.ui=s.ui||defaultState().ui; s.ui.active=null; s.ui.monthPicker=false; s.ui.view="day";
+        s=migrate(s); state=s; save(); render(); toTop();
+        var kyoku=(s.meta&&s.meta.kyoku)||"", ym=(s.meta?eraLabel(s.meta):""), cnt=(s.items?s.items.length:0);
+        alert("引き継ぎ完了："+kyoku+" ／ "+ym+"（資器材 "+cnt+" 品目）を読み込みました。");
+      }catch(err){ alert("読み込みに失敗しました。ファイルを確認してください。"); }
+    };
+    r.readAsText(f); };
+  inp.click();
+}
+
+/* ============ 起動 ============ */
+document.addEventListener("DOMContentLoaded",function(){
+  app=document.getElementById("app");
+  state=load();
+  document.addEventListener("click",handleClick);
+  document.addEventListener("input",handleInput);
+  document.addEventListener("change",handleChange);
+  render();
+});
+</script>
+</body>
+</html>
